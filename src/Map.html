@@ -113,15 +113,17 @@
 
   // ---------- Pin visual computation ----------
   function computePinVisual(pin) {
-    // Task 4: All-mode only. Simple pass-through.
-    return {
-      color: pin.color,
-      opacity: 1,
-      ringColor: null,
-      ringWidth: 0,
-      scale: 1,
-      star: false,
-    };
+    if (state.mode === 'all') {
+      return { color: pin.color, opacity: 1, ringColor: null, ringWidth: 0, scale: 1, star: false };
+    }
+    // Group mode, resting (no focus yet) or default for non-focused.
+    var hasData = pin.groupMembership && pin.groupMembership[state.activeColumn]
+                  && pin.groupMembership[state.activeColumn].length > 0;
+    if (!state.focusedPin) {
+      return { color: pin.color, opacity: hasData ? 1 : 0.35, ringColor: null, ringWidth: 0, scale: 1, star: false };
+    }
+    // With focusedPin — Task 8 fills in the real highlight. For now fall through to muted.
+    return { color: pin.color, opacity: hasData ? 1 : 0.35, ringColor: null, ringWidth: 0, scale: 1, star: false };
   }
 
   function makePinIcon(visual) {
@@ -207,6 +209,11 @@
   }
 
   function renderSidebar() {
+    if (state.mode === 'group') renderGroupSidebar();
+    else renderAllSidebar();
+  }
+
+  function renderAllSidebar() {
     var sb = document.getElementById('sidebar');
     sb.innerHTML = '';
     var data = state.data;
@@ -274,16 +281,80 @@
     }
 
     if (data.unmapped && data.unmapped.length) {
-      var hUn = document.createElement('h3');
-      hUn.textContent = 'Unmapped (' + data.unmapped.length + ')';
-      sb.appendChild(hUn);
-      data.unmapped.forEach(function (u) {
+      appendUnmappedSection(sb, data.unmapped);
+    }
+  }
+
+  function renderGroupSidebar() {
+    var sb = document.getElementById('sidebar');
+    sb.innerHTML = '';
+    var data = state.data;
+    var col = state.activeColumn;
+    var idx = (data.groupIndex && data.groupIndex[col]) || { groups: {}, palette: {} };
+
+    var hCol = document.createElement('h3'); hCol.textContent = col; sb.appendChild(hCol);
+
+    // Focused sub-group callout (Task 8 will populate meaningful content here; for now show nothing when no focus).
+
+    // Sub-group index.
+    var subHeader = document.createElement('h3'); subHeader.textContent = 'Sub-groups'; sb.appendChild(subHeader);
+    var keys = Object.keys(idx.groups);
+    if (!keys.length) {
+      var note = document.createElement('div');
+      note.style.fontSize = '12px'; note.style.color = '#999';
+      note.textContent = 'No sub-groups found in this column.';
+      sb.appendChild(note);
+    }
+    keys.forEach(function (key) {
+      var g = idx.groups[key];
+      var row = document.createElement('div');
+      row.className = 'legend-row';
+      row.innerHTML =
+        '<span class="legend-swatch" style="background:' + (idx.palette[key] || '#9e9e9e') + ';"></span>' +
+        '<span>' + escapeHtml(g.displayId) + '</span>' +
+        '<span class="legend-count">' + g.members.length + (g.leaders.length ? ' (' + g.leaders.length + '★)' : '') + '</span>';
+      // Click focuses this sub-group at its first member (Task 8 wires click-cycle for pins; here we
+      // let the sidebar itself focus without needing a pin click, for discoverability).
+      row.addEventListener('click', function () {
+        if (!g.members.length) return;
+        var first = g.members[0];
+        var marker = markers.find(function (m) { return m._drivemap.rowNumber === first.rowNumber; });
+        if (!marker) return;
+        state.focusedPin = marker._drivemap;
+        state.cycleIndex = state.focusedPin.groupMembership[col].findIndex(function (e) {
+          return e.id.toLowerCase() === key;
+        });
+        if (state.cycleIndex < 0) state.cycleIndex = 0;
+        render();
+      });
+      sb.appendChild(row);
+    });
+
+    if (data.unmapped && data.unmapped.length) {
+      appendUnmappedSection(sb, data.unmapped);
+    }
+
+    if (data.warnings && data.warnings.length) {
+      var hW = document.createElement('h3'); hW.textContent = 'Warnings'; sb.appendChild(hW);
+      data.warnings.forEach(function (w) {
         var row = document.createElement('div');
-        row.className = 'unmapped-row';
-        row.textContent = 'Row ' + u.rowNumber + ': ' + u.address;
+        row.style.fontSize = '12px'; row.style.color = '#b00';
+        row.textContent = w;
         sb.appendChild(row);
       });
     }
+  }
+
+  function appendUnmappedSection(sb, unmapped) {
+    var hUn = document.createElement('h3');
+    hUn.textContent = 'Unmapped (' + unmapped.length + ')';
+    sb.appendChild(hUn);
+    unmapped.forEach(function (u) {
+      var row = document.createElement('div');
+      row.className = 'unmapped-row';
+      row.textContent = 'Row ' + u.rowNumber + ': ' + u.address;
+      sb.appendChild(row);
+    });
   }
 
   function populateViewSelect(data) {
