@@ -176,3 +176,34 @@ function readSettings_() {
 
   return { kv, lookup };
 }
+
+// ============================================================================
+// Cache columns (Latitude / Longitude / Geocoded From) in the data tab
+// ============================================================================
+
+function ensureCacheColumns_(dataSheet, settings) {
+  const header = dataSheet.getRange(1, 1, 1, Math.max(dataSheet.getLastColumn(), 1)).getValues()[0];
+  const wanted = [
+    { key: 'Latitude column',     label: settings['Latitude column']     || 'Latitude' },
+    { key: 'Longitude column',    label: settings['Longitude column']    || 'Longitude' },
+    { key: 'Geocoded From column',label: settings['Geocoded From column']|| 'Geocoded From' },
+  ];
+  const positions = {};
+  let nextCol = dataSheet.getLastColumn() + 1;
+  let added = false;
+
+  for (const w of wanted) {
+    const existing = header.findIndex((h) => String(h || '').trim().toLowerCase() === w.label.toLowerCase());
+    if (existing !== -1) {
+      positions[w.key] = existing + 1;
+    } else {
+      dataSheet.getRange(1, nextCol).setValue(w.label).setFontWeight('bold');
+      positions[w.key] = nextCol;
+      nextCol++;
+      added = true;
+    }
+  }
+
+  if (added) SpreadsheetApp.flush();
+  return positions;
+}
