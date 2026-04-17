@@ -25,21 +25,28 @@ One page. Install into a test Google Sheet and walk through UAT.
 
 From the test sheet: **Extensions → Apps Script**. In the Apps Script editor
 create or replace each of these files, pasting the contents from this repo's
-`dist/` folder. Apps Script sorts files alphabetically, which is fine — the
-`lib_*.gs` files just need to be present.
+[`dist/`](https://github.com/mmackelprang/MapsInSheets/tree/main/dist) folder.
 
-| File in `dist/` | Create in Apps Script as | How |
+**Fastest way if you're on GitHub:** open each file link below in a new tab,
+click the **Raw** button, `Ctrl+A` / `Cmd+A` to select all, copy, and paste
+into Apps Script. No clone needed.
+
+| File on GitHub | Create in Apps Script as | How |
 |---|---|---|
-| `Code.gs` | `Code.gs` | replace the default stub |
-| `lib_cache.gs` | `lib_cache.gs` | `+ → Script` |
-| `lib_colors.gs` | `lib_colors.gs` | `+ → Script` |
-| `lib_columns.gs` | `lib_columns.gs` | `+ → Script` |
-| `lib_legend.gs` | `lib_legend.gs` | `+ → Script` |
-| `lib_smart_links.gs` | `lib_smart_links.gs` | `+ → Script` |
-| `Map.html` | `Map` | `+ → HTML`, name it `Map` (no extension) |
-| `appsscript.json` | `appsscript.json` | Click ⚙️ Project Settings, check "Show appsscript.json manifest file in editor", then paste contents |
+| [`dist/Code.gs`](https://github.com/mmackelprang/MapsInSheets/blob/main/dist/Code.gs) | `Code.gs` | replace the default stub |
+| [`dist/lib_cache.gs`](https://github.com/mmackelprang/MapsInSheets/blob/main/dist/lib_cache.gs) | `lib_cache.gs` | `+ → Script` |
+| [`dist/lib_colors.gs`](https://github.com/mmackelprang/MapsInSheets/blob/main/dist/lib_colors.gs) | `lib_colors.gs` | `+ → Script` |
+| [`dist/lib_columns.gs`](https://github.com/mmackelprang/MapsInSheets/blob/main/dist/lib_columns.gs) | `lib_columns.gs` | `+ → Script` |
+| [`dist/lib_legend.gs`](https://github.com/mmackelprang/MapsInSheets/blob/main/dist/lib_legend.gs) | `lib_legend.gs` | `+ → Script` |
+| [`dist/lib_smart_links.gs`](https://github.com/mmackelprang/MapsInSheets/blob/main/dist/lib_smart_links.gs) | `lib_smart_links.gs` | `+ → Script` |
+| [`dist/Map.html`](https://github.com/mmackelprang/MapsInSheets/blob/main/dist/Map.html) | `Map` | `+ → HTML`, name it `Map` (no extension) |
+| [`dist/appsscript.json`](https://github.com/mmackelprang/MapsInSheets/blob/main/dist/appsscript.json) | `appsscript.json` | Click ⚙️ Project Settings, check "Show appsscript.json manifest file in editor", then paste contents |
 
 Click the **Save** icon once. Reload your spreadsheet browser tab.
+
+> **Verify all 6 script files are present before the first run.** If you miss
+> a `lib_*.gs` file you will get errors like `ReferenceError: needsGeocoding
+> is not defined` when the map tries to load.
 
 ## 3 · First run (~2 min)
 
