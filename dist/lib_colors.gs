@@ -1,7 +1,9 @@
-const NEUTRAL_GRAY = '#9e9e9e';
+// Apps Script V8 quirk: top-level `const`/`let` is file-scoped, not global.
+// Using `var` here so these constants are visible from Code.gs and lib_legend.gs.
+var NEUTRAL_GRAY = '#9e9e9e';
 
 // Colorblind-friendly palette (Okabe-Ito + a few extensions), 12 entries.
-const DEFAULT_PALETTE = [
+var DEFAULT_PALETTE = [
   '#e69f00', '#56b4e9', '#009e73', '#f0e442',
   '#0072b2', '#d55e00', '#cc79a7', '#999999',
   '#8c564b', '#17becf', '#bcbd22', '#7f7f7f',
