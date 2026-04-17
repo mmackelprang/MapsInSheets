@@ -76,7 +76,9 @@ const SETTINGS_KEYS = [
   { key: 'Address column',      help: 'Column letter or header name of the address column.' },
   { key: 'Color column',        help: 'Column whose value drives pin color.' },
   { key: 'Popup columns',       help: 'Comma-separated header names shown in the info window, in order. First one is the title.' },
+  { key: 'Popup labels',        help: 'Optional. Comma-separated Header → DisplayLabel pairs to rename labels in the info window.' },
   { key: 'Filter columns',      help: 'Comma-separated header names exposed as filter dropdowns.' },
+  { key: 'Group columns',       help: 'Optional. Comma-separated column headers whose cells contain CSV group IDs (with optional * leader suffix).' },
   { key: 'Latitude column',     help: 'Auto-managed. Column that stores cached latitude.' },
   { key: 'Longitude column',    help: 'Auto-managed. Column that stores cached longitude.' },
   { key: 'Geocoded From column',help: 'Auto-managed. Stores the address string used to geocode this row.' },
@@ -255,6 +257,11 @@ function readRows_(settings) {
   const popupCols   = parseCsvList_(settings['Popup columns']).map((n) => ({ name: n, idx: resolveColumn_(n, header) })).filter((x) => x.idx);
   const filterCols  = parseCsvList_(settings['Filter columns']).map((n) => ({ name: n, idx: resolveColumn_(n, header) })).filter((x) => x.idx);
 
+  const groupColList = parseCsvList_(settings['Group columns']);
+  const groupCols = groupColList.map((n) => ({ name: n, idx: resolveColumn_(n, header) }));
+  const missingGroupCols = groupCols.filter((x) => !x.idx).map((x) => x.name);
+  const validGroupCols = groupCols.filter((x) => x.idx);
+
   if (!addressCol) throw new Error('Address column is not configured or not found. Set it on the Map Settings tab.');
 
   const rows = [];
@@ -267,6 +274,9 @@ function readRows_(settings) {
     const filters = {};
     for (const { name, idx } of filterCols) filters[name] = raw[idx - 1];
 
+    const groupCells = {};
+    for (const { name, idx } of validGroupCols) groupCells[name] = raw[idx - 1];
+
     rows.push({
       rowNumber: r + 1,
       address,
@@ -276,10 +286,11 @@ function readRows_(settings) {
       geocodedFrom: raw[cache['Geocoded From column'] - 1],
       popup,
       filters,
+      groupCells,
     });
   }
 
-  return { rows, dataSheet, header, cache };
+  return { rows, dataSheet, header, cache, groupColumns: validGroupCols.map((c) => c.name), missingGroupColumns: missingGroupCols };
 }
 
 // ============================================================================
@@ -340,7 +351,8 @@ function geocodeRows_(toGeocode, dataSheet, cache) {
 
 function getMapData() {
   const { kv: settings, lookup } = readSettings_();
-  const { rows, dataSheet, cache } = readRows_(settings);
+  const readResult = readRows_(settings);
+  const { rows, dataSheet, cache, groupColumns, missingGroupColumns } = readResult;
 
   const toGeocode = [];
   const unmapped = [];
@@ -366,6 +378,14 @@ function getMapData() {
     else unmapped.push({ rowNumber: row.rowNumber, address: row.address });
   }
 
+  // Parse group cells into per-row groupMembership.
+  for (const row of mapped) {
+    row.groupMembership = {};
+    for (const col of groupColumns) {
+      row.groupMembership[col] = parseGroupCell(row.groupCells ? row.groupCells[col] : '');
+    }
+  }
+
   const palette = DEFAULT_PALETTE;
   const legend = buildLegend({
     rows: mapped.map((r) => ({ __color__: r.colorValue })),
@@ -373,6 +393,18 @@ function getMapData() {
     lookup,
     palette,
   });
+
+  // Build the per-column group index (members/leaders + palette).
+  const groupIndex = buildGroupIndex(mapped, groupColumns);
+
+  // Parse popup label overrides.
+  const popupLabels = parsePopupLabels(settings['Popup labels']);
+
+  // Compose warnings (currently only missing-group-column warnings).
+  const warnings = [];
+  for (const m of missingGroupColumns) {
+    warnings.push('Configured group column "' + m + '" is not in the data tab.');
+  }
 
   const pins = mapped.map((r) => ({
     rowNumber: r.rowNumber,
@@ -383,6 +415,7 @@ function getMapData() {
     colorValue: r.colorValue == null ? '' : String(r.colorValue),
     popup: r.popup.map((p) => ({ name: p.name, value: p.value == null ? '' : String(p.value) })),
     filters: r.filters,
+    groupMembership: r.groupMembership || {},
   }));
 
   return {
@@ -391,6 +424,10 @@ function getMapData() {
     pins,
     unmapped,
     filterColumns: parseCsvList_(settings['Filter columns']),
+    groupColumns,
+    groupIndex,
+    popupLabels,
+    warnings,
     totalRows: rows.length,
     geocoded: toGeocode.length - unmapped.length,
     remainingToGeocode: Math.max(0, toGeocode.length - geocodeResults.length),
