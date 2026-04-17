@@ -38,6 +38,8 @@
 <div id="app">
   <div id="topbar">
     <button id="refreshBtn">🔄 Refresh</button>
+    <label style="font-size:13px;color:#666;">View:</label>
+    <select id="viewSelect" style="padding:6px 8px;border:1px solid #ccc;border-radius:4px;"></select>
     <input id="searchBox" type="search" placeholder="Search…">
     <span id="status">Loading…</span>
   </div>
@@ -284,6 +286,27 @@
     }
   }
 
+  function populateViewSelect(data) {
+    var sel = document.getElementById('viewSelect');
+    sel.innerHTML = '';
+    var allOpt = document.createElement('option');
+    allOpt.value = '__all__';
+    allOpt.textContent = 'All';
+    sel.appendChild(allOpt);
+    (data.groupColumns || []).forEach(function (col) {
+      var opt = document.createElement('option');
+      opt.value = col;
+      opt.textContent = col;
+      sel.appendChild(opt);
+    });
+    // Restore current selection if still valid.
+    if (state.mode === 'group' && state.activeColumn && (data.groupColumns || []).indexOf(state.activeColumn) !== -1) {
+      sel.value = state.activeColumn;
+    } else {
+      sel.value = '__all__';
+    }
+  }
+
   function setStatus(msg) { document.getElementById('status').textContent = msg; }
   function setBanner(msg) {
     var b = document.getElementById('banner');
@@ -313,6 +336,7 @@
     google.script.run
       .withSuccessHandler(function (data) {
         state.data = data;
+        populateViewSelect(data);
         rebuildMarkers(data);
         render();
       })
@@ -324,6 +348,19 @@
   document.getElementById('refreshBtn').addEventListener('click', loadData);
   document.getElementById('searchBox').addEventListener('input', function (ev) {
     state.searchTerm = ev.target.value.trim();
+    render();
+  });
+  document.getElementById('viewSelect').addEventListener('change', function (ev) {
+    var value = ev.target.value;
+    if (value === '__all__') {
+      state.mode = 'all';
+      state.activeColumn = null;
+    } else {
+      state.mode = 'group';
+      state.activeColumn = value;
+    }
+    state.focusedPin = null;
+    state.cycleIndex = 0;
     render();
   });
   loadData();
