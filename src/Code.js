@@ -38,10 +38,16 @@ function openNewTab() {
     );
     return;
   }
+  const safeUrl = String(url).replace(/"/g, '&quot;');
   const html = HtmlService.createHtmlOutput(
-    '<script>window.open(' + JSON.stringify(url) + ', "_blank"); google.script.host.close();</script>'
-  ).setWidth(100).setHeight(50);
-  ui.showModalDialog(html, 'Opening new tab…');
+    '<div style="padding:16px;font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif;">' +
+      '<p style="margin:0 0 12px 0;">Click to open MapsInSheets in a new tab:</p>' +
+      '<a href="' + safeUrl + '" target="_blank" rel="noopener" ' +
+      'style="display:inline-block;padding:8px 16px;background:#1a73e8;color:#fff;text-decoration:none;border-radius:4px;font-weight:500;">' +
+      'Open in new tab &#8599;</a>' +
+    '</div>'
+  ).setWidth(360).setHeight(160);
+  ui.showModalDialog(html, 'Open in new tab');
 }
 
 // Web app entry point. Serves the same Map.html used by the dialog.
