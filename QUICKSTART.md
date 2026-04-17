@@ -37,16 +37,20 @@ into Apps Script. No clone needed.
 | [`dist/lib_cache.gs`](https://github.com/mmackelprang/MapsInSheets/blob/main/dist/lib_cache.gs) | `lib_cache.gs` | `+ → Script` |
 | [`dist/lib_colors.gs`](https://github.com/mmackelprang/MapsInSheets/blob/main/dist/lib_colors.gs) | `lib_colors.gs` | `+ → Script` |
 | [`dist/lib_columns.gs`](https://github.com/mmackelprang/MapsInSheets/blob/main/dist/lib_columns.gs) | `lib_columns.gs` | `+ → Script` |
+| [`dist/lib_groups.gs`](https://github.com/mmackelprang/MapsInSheets/blob/main/dist/lib_groups.gs) | `lib_groups.gs` | `+ → Script` |
 | [`dist/lib_legend.gs`](https://github.com/mmackelprang/MapsInSheets/blob/main/dist/lib_legend.gs) | `lib_legend.gs` | `+ → Script` |
+| [`dist/lib_popup_labels.gs`](https://github.com/mmackelprang/MapsInSheets/blob/main/dist/lib_popup_labels.gs) | `lib_popup_labels.gs` | `+ → Script` |
 | [`dist/lib_smart_links.gs`](https://github.com/mmackelprang/MapsInSheets/blob/main/dist/lib_smart_links.gs) | `lib_smart_links.gs` | `+ → Script` |
 | [`dist/Map.html`](https://github.com/mmackelprang/MapsInSheets/blob/main/dist/Map.html) | `Map` | `+ → HTML`, name it `Map` (no extension) |
 | [`dist/appsscript.json`](https://github.com/mmackelprang/MapsInSheets/blob/main/dist/appsscript.json) | `appsscript.json` | Click ⚙️ Project Settings, check "Show appsscript.json manifest file in editor", then paste contents |
 
 Click the **Save** icon once. Reload your spreadsheet browser tab.
 
-> **Verify all 6 script files are present before the first run.** If you miss
-> a `lib_*.gs` file you will get errors like `ReferenceError: needsGeocoding
-> is not defined` when the map tries to load.
+> **Verify all 8 script files are present before the first run** (`Code.gs`
+> plus 7 × `lib_*.gs`). If you miss a `lib_*.gs` file you will get errors
+> like `ReferenceError: needsGeocoding is not defined` (missing `lib_cache.gs`)
+> or `ReferenceError: parseGroupCell is not defined` (missing `lib_groups.gs`)
+> when the map tries to load.
 
 ## 3 · First run (~2 min)
 
