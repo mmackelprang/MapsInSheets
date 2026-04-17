@@ -5,8 +5,6 @@
   <title>MapsInSheets</title>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
         integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
-  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css">
-  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css">
   <style>
     html, body { margin: 0; height: 100%; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
     #app { display: grid; grid-template-rows: 48px 1fr; height: 100vh; }
@@ -52,7 +50,6 @@
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
         integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
-<script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
 <script>
   // ---------- Leaflet setup ----------
   var map = L.map('map').setView([39.5, -98.35], 4);
@@ -61,8 +58,8 @@
     maxZoom: 19,
   }).addTo(map);
 
-  var cluster = L.markerClusterGroup();
-  map.addLayer(cluster);
+  var pinLayer = L.featureGroup();
+  map.addLayer(pinLayer);
 
   // ---------- State ----------
   var state = {
@@ -188,14 +185,14 @@
   // ---------- Render ----------
   function render() {
     if (!state.data) return;
-    cluster.clearLayers();
+    pinLayer.clearLayers();
     var visible = 0;
     for (var i = 0; i < markers.length; i++) {
       var m = markers[i];
       var p = m._drivemap;
       if (!pinIsVisible(p)) continue;
       m.setIcon(makePinIcon(computePinVisual(p)));
-      cluster.addLayer(m);
+      pinLayer.addLayer(m);
       visible++;
     }
     renderSidebar();
@@ -297,7 +294,7 @@
   // ---------- Marker management ----------
   function rebuildMarkers(data) {
     markers = [];
-    cluster.clearLayers();
+    pinLayer.clearLayers();
     data.pins.forEach(function (p) {
       var marker = L.marker([p.lat, p.lng], { icon: makePinIcon(computePinVisual(p)) });
       marker._drivemap = p;
