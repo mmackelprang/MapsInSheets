@@ -54,8 +54,8 @@
         integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
 <script>
-  // ----- Leaflet setup -----
-  var map = L.map('map').setView([39.5, -98.35], 4); // center of the US as initial view
+  // ---------- Leaflet setup ----------
+  var map = L.map('map').setView([39.5, -98.35], 4);
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     attribution: '&copy; OpenStreetMap contributors',
     maxZoom: 19,
@@ -64,26 +64,21 @@
   var cluster = L.markerClusterGroup();
   map.addLayer(cluster);
 
-  // ----- State -----
-  var state = { data: null, markers: [] };
-  var hidden = new Set();          // lowercased legend values that are hidden
-  var columnFilters = {};          // { [columnName]: Set<lowercase value> }
-  var searchTerm = '';
+  // ---------- State ----------
+  var state = {
+    data: null,
+    mode: 'all',           // 'all' | 'group'
+    activeColumn: null,    // group column name when mode === 'group'
+    focusedPin: null,      // pin object when a pin is focused
+    cycleIndex: 0,
+    searchTerm: '',
+    hiddenLegendValues: new Set(),
+    columnFilters: {},     // { columnName: Set<lowercase value> }
+  };
 
-  // ----- Helpers -----
-  function setStatus(msg) { document.getElementById('status').textContent = msg; }
-  function setBanner(msg) {
-    var b = document.getElementById('banner');
-    if (!msg) { b.classList.remove('show'); b.textContent = ''; }
-    else { b.textContent = msg; b.classList.add('show'); }
-  }
-  function escapeHtml(s) {
-    return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
-      return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c];
-    });
-  }
+  var markers = [];        // Leaflet marker objects, one per pin
 
-  // ----- Smart-link detection (mirrors src/lib/smart-links.js) -----
+  // ---------- Smart-link detection (mirrors src/lib/smart-links.js) ----------
   var EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   var URL_RE = /^https?:\/\/\S+$/i;
   var PHONE_RE = /^(?:\+?\d[\d\s().-]{8,}\d|\([\d]{3}\)[\d\s().-]{6,}\d)$/;
@@ -105,12 +100,43 @@
     return { kind: 'text', href: null, text: text };
   }
 
+  function escapeHtml(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+      return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c];
+    });
+  }
+
   function renderValue(value) {
     var c = classify(value);
     if (c.kind === 'text') return escapeHtml(c.text);
     return '<a href="' + escapeHtml(c.href) + '" target="_blank" rel="noopener">' + escapeHtml(c.text) + '</a>';
   }
 
+  // ---------- Pin visual computation ----------
+  function computePinVisual(pin) {
+    // Task 4: All-mode only. Simple pass-through.
+    return {
+      color: pin.color,
+      opacity: 1,
+      ringColor: null,
+      ringWidth: 0,
+      scale: 1,
+      star: false,
+    };
+  }
+
+  function makePinIcon(visual) {
+    var size = Math.round(18 * visual.scale);
+    var html = '<div class="pin-circle" style="background:' + visual.color + ';width:' + size + 'px;height:' + size + 'px;opacity:' + visual.opacity + ';"></div>';
+    return L.divIcon({
+      html: html,
+      className: '',
+      iconSize: [size, size],
+      iconAnchor: [size / 2, size / 2],
+    });
+  }
+
+  // ---------- Info window ----------
   function buildInfoHtml(p) {
     var title = p.popup && p.popup.length ? p.popup[0].value : '';
     var rest = (p.popup || []).slice(1);
@@ -127,20 +153,10 @@
     return parts.join('');
   }
 
-  // ----- Pin icons -----
-  function makePinIcon(color) {
-    return L.divIcon({
-      html: '<div class="pin-circle" style="background:' + color + ';"></div>',
-      className: '',
-      iconSize: [18, 18],
-      iconAnchor: [9, 9],
-    });
-  }
-
-  // ----- Filter predicates -----
+  // ---------- Filter predicates ----------
   function matchesSearch(p) {
-    if (!searchTerm) return true;
-    var needle = searchTerm.toLowerCase();
+    if (!state.searchTerm) return true;
+    var needle = state.searchTerm.toLowerCase();
     if (p.address && p.address.toLowerCase().indexOf(needle) !== -1) return true;
     for (var i = 0; i < (p.popup || []).length; i++) {
       var v = p.popup[i].value;
@@ -150,8 +166,8 @@
   }
 
   function matchesColumnFilters(p) {
-    for (var col in columnFilters) {
-      var allowed = columnFilters[col];
+    for (var col in state.columnFilters) {
+      var allowed = state.columnFilters[col];
       if (!allowed || allowed.size === 0) continue;
       var val = p.filters && p.filters[col];
       var key = val == null ? '' : String(val).trim().toLowerCase();
@@ -160,39 +176,56 @@
     return true;
   }
 
-  function applyFilters() {
-    cluster.clearLayers();
-    var visible = 0;
-    state.markers.forEach(function (m) {
-      var p = m._drivemap;
-      var colorVal = (p.colorValue || '(no value)').toLowerCase();
-      if (hidden.has(colorVal)) return;
-      if (!matchesSearch(p)) return;
-      if (!matchesColumnFilters(p)) return;
-      cluster.addLayer(m);
-      visible++;
-    });
-    setStatus('Showing ' + visible + ' of ' + state.data.totalRows);
+  function matchesLegend(p) {
+    var colorVal = (p.colorValue || '(no value)').toLowerCase();
+    return !state.hiddenLegendValues.has(colorVal);
   }
 
-  // ----- Sidebar rendering -----
-  function renderSidebar(data) {
+  function pinIsVisible(p) {
+    return matchesLegend(p) && matchesSearch(p) && matchesColumnFilters(p);
+  }
+
+  // ---------- Render ----------
+  function render() {
+    if (!state.data) return;
+    cluster.clearLayers();
+    var visible = 0;
+    for (var i = 0; i < markers.length; i++) {
+      var m = markers[i];
+      var p = m._drivemap;
+      if (!pinIsVisible(p)) continue;
+      m.setIcon(makePinIcon(computePinVisual(p)));
+      cluster.addLayer(m);
+      visible++;
+    }
+    renderSidebar();
+    setStatus('Showing ' + visible + ' of ' + state.data.totalRows);
+    if (state.data.remainingToGeocode > 0) {
+      setBanner('Geocoding was interrupted — ' + state.data.remainingToGeocode + ' rows remain. Click Refresh to continue.');
+    } else {
+      setBanner('');
+    }
+  }
+
+  function renderSidebar() {
     var sb = document.getElementById('sidebar');
     sb.innerHTML = '';
+    var data = state.data;
 
     var hLegend = document.createElement('h3'); hLegend.textContent = 'Legend'; sb.appendChild(hLegend);
 
     data.legend.entries.forEach(function (e) {
       var row = document.createElement('div');
-      row.className = 'legend-row' + (hidden.has(e.value.toLowerCase()) ? ' hidden' : '');
+      row.className = 'legend-row' + (state.hiddenLegendValues.has(e.value.toLowerCase()) ? ' hidden' : '');
       row.innerHTML =
         '<span class="legend-swatch" style="background:' + e.color + ';"></span>' +
         '<span>' + escapeHtml(e.value) + '</span>' +
         '<span class="legend-count">' + e.count + '</span>';
       row.addEventListener('click', function () {
         var k = e.value.toLowerCase();
-        if (hidden.has(k)) hidden.delete(k); else hidden.add(k);
-        applyFilters();
+        if (state.hiddenLegendValues.has(k)) state.hiddenLegendValues.delete(k);
+        else state.hiddenLegendValues.add(k);
+        render();
       });
       sb.appendChild(row);
     });
@@ -234,8 +267,8 @@
         select.addEventListener('change', function () {
           var allowed = new Set();
           Array.from(select.selectedOptions).forEach(function (o) { allowed.add(o.value); });
-          columnFilters[col] = allowed;
-          applyFilters();
+          state.columnFilters[col] = allowed;
+          render();
         });
         sb.appendChild(select);
       });
@@ -254,43 +287,47 @@
     }
   }
 
-  // ----- Main renderer -----
-  function renderPins(data) {
+  function setStatus(msg) { document.getElementById('status').textContent = msg; }
+  function setBanner(msg) {
+    var b = document.getElementById('banner');
+    if (!msg) { b.classList.remove('show'); b.textContent = ''; }
+    else { b.textContent = msg; b.classList.add('show'); }
+  }
+
+  // ---------- Marker management ----------
+  function rebuildMarkers(data) {
+    markers = [];
     cluster.clearLayers();
-    state.markers = [];
     data.pins.forEach(function (p) {
-      var marker = L.marker([p.lat, p.lng], { icon: makePinIcon(p.color) });
+      var marker = L.marker([p.lat, p.lng], { icon: makePinIcon(computePinVisual(p)) });
       marker._drivemap = p;
       marker.bindPopup(buildInfoHtml(p), { maxWidth: 320 });
-      state.markers.push(marker);
+      markers.push(marker);
     });
-    renderSidebar(data);
-    applyFilters();
     if (data.pins.length) {
-      var group = L.featureGroup(state.markers);
+      var group = L.featureGroup(markers);
       map.fitBounds(group.getBounds().pad(0.1));
-    }
-    if (data.remainingToGeocode > 0) {
-      setBanner('Geocoding was interrupted — ' + data.remainingToGeocode + ' rows remain. Click Refresh to continue.');
-    } else {
-      setBanner('');
     }
   }
 
-  // ----- Data fetch -----
+  // ---------- Data fetch ----------
   function loadData() {
     setStatus('Loading…');
     google.script.run
-      .withSuccessHandler(function (data) { state.data = data; renderPins(data); })
+      .withSuccessHandler(function (data) {
+        state.data = data;
+        rebuildMarkers(data);
+        render();
+      })
       .withFailureHandler(function (err) { setStatus('Error: ' + err.message); })
       .getMapData();
   }
 
-  // ----- Wire up -----
+  // ---------- Wire up ----------
   document.getElementById('refreshBtn').addEventListener('click', loadData);
   document.getElementById('searchBox').addEventListener('input', function (ev) {
-    searchTerm = ev.target.value.trim();
-    applyFilters();
+    state.searchTerm = ev.target.value.trim();
+    render();
   });
   loadData();
 </script>
