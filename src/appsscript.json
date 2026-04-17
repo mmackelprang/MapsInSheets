@@ -6,11 +6,10 @@
   "oauthScopes": [
     "https://www.googleapis.com/auth/spreadsheets.currentonly",
     "https://www.googleapis.com/auth/script.container.ui",
-    "https://www.googleapis.com/auth/script.external_request",
-    "https://www.googleapis.com/auth/maps"
+    "https://www.googleapis.com/auth/script.external_request"
   ],
   "webapp": {
     "executeAs": "USER_DEPLOYING",
-    "access": "ANYONE_WITH_GOOGLE_ACCOUNT"
+    "access": "ANYONE"
   }
 }
