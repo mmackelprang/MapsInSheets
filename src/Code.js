@@ -281,3 +281,118 @@ function readRows_(settings) {
 
   return { rows, dataSheet, header, cache };
 }
+
+// ============================================================================
+// Geocoding + getMapData orchestration
+// ============================================================================
+
+const GEOCODE_BATCH_SIZE = 50;
+const GEOCODE_TIME_BUDGET_MS = 5 * 60 * 1000; // leave a minute of the 6-minute quota
+
+function geocodeRows_(toGeocode, dataSheet, cache) {
+  const geocoder = Maps.newGeocoder();
+  const latCol = cache['Latitude column'];
+  const lngCol = cache['Longitude column'];
+  const fromCol = cache['Geocoded From column'];
+
+  const results = [];
+  const started = Date.now();
+  let pending = [];
+
+  function flushPending() {
+    if (pending.length === 0) return;
+    for (const p of pending) {
+      dataSheet.getRange(p.rowNumber, latCol).setValue(p.lat);
+      dataSheet.getRange(p.rowNumber, lngCol).setValue(p.lng);
+      dataSheet.getRange(p.rowNumber, fromCol).setValue(p.geocodedFrom);
+    }
+    SpreadsheetApp.flush();
+    pending = [];
+  }
+
+  for (const row of toGeocode) {
+    if (Date.now() - started > GEOCODE_TIME_BUDGET_MS) {
+      flushPending();
+      break;
+    }
+    let lat = '', lng = '', ok = false;
+    try {
+      const resp = geocoder.geocode(row.address);
+      if (resp.status === 'OK' && resp.results && resp.results.length) {
+        const loc = resp.results[0].geometry.location;
+        lat = loc.lat; lng = loc.lng; ok = true;
+      }
+    } catch (_) {
+      // swallow — will be reported as unmapped
+    }
+    if (ok) {
+      pending.push({ rowNumber: row.rowNumber, lat, lng, geocodedFrom: row.address });
+      row.lat = lat; row.lng = lng; row.geocodedFrom = row.address;
+      results.push({ rowNumber: row.rowNumber, ok: true });
+      if (pending.length >= GEOCODE_BATCH_SIZE) flushPending();
+    } else {
+      results.push({ rowNumber: row.rowNumber, ok: false });
+    }
+  }
+  flushPending();
+  return results;
+}
+
+function getMapData() {
+  const { kv: settings, lookup } = readSettings_();
+  const { rows, dataSheet, cache } = readRows_(settings);
+
+  const toGeocode = [];
+  const unmapped = [];
+  const mapped = [];
+
+  for (const row of rows) {
+    const decision = needsGeocoding({
+      address: row.address,
+      lat: row.lat,
+      lng: row.lng,
+      geocodedFrom: row.geocodedFrom,
+    });
+    if (decision === 'geocode') toGeocode.push(row);
+    else if (decision === 'cached') mapped.push(row);
+  }
+
+  const geocodeResults = geocodeRows_(toGeocode, dataSheet, cache);
+  const byRow = new Map(geocodeResults.map((r) => [r.rowNumber, r]));
+
+  for (const row of toGeocode) {
+    const res = byRow.get(row.rowNumber);
+    if (res && res.ok) mapped.push(row);
+    else unmapped.push({ rowNumber: row.rowNumber, address: row.address });
+  }
+
+  const palette = DEFAULT_PALETTE;
+  const legend = buildLegend({
+    rows: mapped.map((r) => ({ __color__: r.colorValue })),
+    colorField: '__color__',
+    lookup,
+    palette,
+  });
+
+  const pins = mapped.map((r) => ({
+    rowNumber: r.rowNumber,
+    address: r.address,
+    lat: Number(r.lat),
+    lng: Number(r.lng),
+    color: resolveColor(r.colorValue, lookup, palette),
+    colorValue: r.colorValue == null ? '' : String(r.colorValue),
+    popup: r.popup.map((p) => ({ name: p.name, value: p.value == null ? '' : String(p.value) })),
+    filters: r.filters,
+  }));
+
+  return {
+    settings,
+    legend,
+    pins,
+    unmapped,
+    filterColumns: parseCsvList_(settings['Filter columns']),
+    totalRows: rows.length,
+    geocoded: toGeocode.length - unmapped.length,
+    remainingToGeocode: Math.max(0, toGeocode.length - geocodeResults.length),
+  };
+}
