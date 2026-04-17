@@ -116,24 +116,62 @@
     if (state.mode === 'all') {
       return { color: pin.color, opacity: 1, ringColor: null, ringWidth: 0, scale: 1, star: false };
     }
-    // Group mode, resting (no focus yet) or default for non-focused.
-    var hasData = pin.groupMembership && pin.groupMembership[state.activeColumn]
-                  && pin.groupMembership[state.activeColumn].length > 0;
+    var col = state.activeColumn;
+    var hasData = pin.groupMembership && pin.groupMembership[col] && pin.groupMembership[col].length > 0;
+
     if (!state.focusedPin) {
       return { color: pin.color, opacity: hasData ? 1 : 0.35, ringColor: null, ringWidth: 0, scale: 1, star: false };
     }
-    // With focusedPin — Task 8 fills in the real highlight. For now fall through to muted.
-    return { color: pin.color, opacity: hasData ? 1 : 0.35, ringColor: null, ringWidth: 0, scale: 1, star: false };
+
+    // With focus — compute the focused sub-group ID and check this pin.
+    var focusedEntries = state.focusedPin.groupMembership[col] || [];
+    if (!focusedEntries.length) {
+      // Shouldn't happen (focused pin must have data in col), but handle gracefully.
+      return { color: pin.color, opacity: hasData ? 1 : 0.35, ringColor: null, ringWidth: 0, scale: 1, star: false };
+    }
+    var safeCycle = ((state.cycleIndex % focusedEntries.length) + focusedEntries.length) % focusedEntries.length;
+    var focusedId = focusedEntries[safeCycle].id.toLowerCase();
+
+    var entry = (pin.groupMembership[col] || []).find(function (e) { return e.id.toLowerCase() === focusedId; });
+    if (!entry) {
+      return { color: pin.color, opacity: hasData ? 0.35 : 0.2, ringColor: null, ringWidth: 0, scale: 1, star: false };
+    }
+
+    var paletteForCol = (state.data.groupIndex && state.data.groupIndex[col] && state.data.groupIndex[col].palette) || {};
+    var ringColor = paletteForCol[focusedId] || '#333';
+    if (entry.isLeader) {
+      return { color: pin.color, opacity: 1, ringColor: ringColor, ringWidth: 4, scale: 1.5, star: true };
+    }
+    return { color: pin.color, opacity: 1, ringColor: ringColor, ringWidth: 2, scale: 1, star: false };
   }
 
   function makePinIcon(visual) {
-    var size = Math.round(18 * visual.scale);
-    var html = '<div class="pin-circle" style="background:' + visual.color + ';width:' + size + 'px;height:' + size + 'px;opacity:' + visual.opacity + ';"></div>';
+    var base = 18;
+    var scaled = Math.round(base * visual.scale);
+    var extra = visual.ringWidth || 0;
+    var total = scaled + 2 * extra;
+
+    var styles = [
+      'width:' + scaled + 'px',
+      'height:' + scaled + 'px',
+      'background:' + visual.color,
+    ];
+    if (visual.ringColor) {
+      styles.push('box-shadow:0 0 0 ' + visual.ringWidth + 'px ' + visual.ringColor + ', 0 1px 3px rgba(0,0,0,0.3)');
+    }
+    var pinHtml = '<div class="pin-circle" style="' + styles.join(';') + ';"></div>';
+    var starHtml = visual.star
+      ? '<div style="position:absolute;top:-4px;right:-4px;font-size:14px;line-height:1;text-shadow:0 0 2px white;">★</div>'
+      : '';
+    var wrapperHtml = '<div style="position:relative;width:' + total + 'px;height:' + total + 'px;opacity:' + visual.opacity + ';">'
+                      + '<div style="position:absolute;left:' + extra + 'px;top:' + extra + 'px;">' + pinHtml + '</div>'
+                      + starHtml
+                    + '</div>';
     return L.divIcon({
-      html: html,
+      html: wrapperHtml,
       className: '',
-      iconSize: [size, size],
-      iconAnchor: [size / 2, size / 2],
+      iconSize: [total, total],
+      iconAnchor: [total / 2, total / 2],
     });
   }
 
@@ -294,7 +332,31 @@
 
     var hCol = document.createElement('h3'); hCol.textContent = col; sb.appendChild(hCol);
 
-    // Focused sub-group callout (Task 8 will populate meaningful content here; for now show nothing when no focus).
+    if (state.focusedPin) {
+      var entries = state.focusedPin.groupMembership[col] || [];
+      if (entries.length) {
+        var safeCycle = ((state.cycleIndex % entries.length) + entries.length) % entries.length;
+        var focusedId = entries[safeCycle].id;
+        var focusedKey = focusedId.toLowerCase();
+        var g = idx.groups[focusedKey];
+        if (g) {
+          var hFocus = document.createElement('h3'); hFocus.textContent = 'Focused'; sb.appendChild(hFocus);
+          var row = document.createElement('div');
+          row.className = 'legend-row';
+          row.innerHTML =
+            '<span class="legend-swatch" style="background:' + (idx.palette[focusedKey] || '#9e9e9e') + ';"></span>' +
+            '<strong>' + escapeHtml(g.displayId) + '</strong>' +
+            '<span class="legend-count">' + g.members.length + ' members' + (g.leaders.length ? ', ' + g.leaders.length + ' leader' + (g.leaders.length === 1 ? '' : 's') : '') + '</span>';
+          sb.appendChild(row);
+          if (entries.length > 1) {
+            var hint = document.createElement('div');
+            hint.style.fontSize = '11px'; hint.style.color = '#666'; hint.style.marginTop = '4px';
+            hint.textContent = 'Click the same pin again to cycle (' + (safeCycle + 1) + ' of ' + entries.length + ').';
+            sb.appendChild(hint);
+          }
+        }
+      }
+    }
 
     // Sub-group index.
     var subHeader = document.createElement('h3'); subHeader.textContent = 'Sub-groups'; sb.appendChild(subHeader);
@@ -385,6 +447,21 @@
     else { b.textContent = msg; b.classList.add('show'); }
   }
 
+  // ---------- Pin click handler ----------
+  function handlePinClick(p) {
+    if (state.mode === 'all') return; // default popup opens via Leaflet
+    var col = state.activeColumn;
+    var entries = (p.groupMembership && p.groupMembership[col]) || [];
+    if (entries.length === 0) return; // non-member click: just show popup; no state change
+    if (state.focusedPin === p) {
+      state.cycleIndex = (state.cycleIndex + 1) % entries.length;
+    } else {
+      state.focusedPin = p;
+      state.cycleIndex = 0;
+    }
+    render();
+  }
+
   // ---------- Marker management ----------
   function rebuildMarkers(data) {
     markers = [];
@@ -393,6 +470,9 @@
       var marker = L.marker([p.lat, p.lng], { icon: makePinIcon(computePinVisual(p)) });
       marker._drivemap = p;
       marker.bindPopup(buildInfoHtml(p), { maxWidth: 320 });
+      marker.on('click', function (ev) {
+        handlePinClick(p);
+      });
       markers.push(marker);
     });
     if (data.pins.length) {
@@ -434,6 +514,15 @@
     state.cycleIndex = 0;
     render();
   });
+  map.on('click', function (ev) {
+    // Called when the click didn't hit a marker.
+    if (state.mode === 'group' && state.focusedPin !== null) {
+      state.focusedPin = null;
+      state.cycleIndex = 0;
+      render();
+    }
+  });
+
   loadData();
 </script>
 </body>
