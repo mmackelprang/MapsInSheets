@@ -15,9 +15,16 @@ tab — that shows:
 
 - **Colored pins** driven by any column you pick (e.g., `Status` →
   Active / Inactive / Visitor).
+- **Group views.** Declare one or more columns as *group columns* whose
+  cells hold comma-separated group IDs with an optional `*` suffix for
+  leaders. Switch the top `View:` dropdown to a group column to mute
+  non-members; click a pin to ring-highlight that pin's sub-group members
+  and badge leaders with a star. Same-pin clicks cycle through multiple
+  memberships.
 - **Info windows** with your chosen columns. Phone numbers become tap-to-call,
   emails become `mailto:` links, URLs become clickable, plus a one-click
-  **Get Directions** button.
+  **Get Directions** button. Column labels can be customized (`Phone → ☎ Mobile`)
+  and empty cells are omitted automatically.
 - **Legend** that doubles as a filter (click a color to hide that group).
 - **Text search** and **per-column filter dropdowns** in the left panel.
 - An **Unmapped** section listing rows whose addresses didn't geocode.
@@ -55,19 +62,18 @@ For the longer version with every option spelled out, see
 
 ```
 ┌─────────────────────────────────────────────────────────┐
-│  🔄 Refresh   🔍 Search…         Showing 843 of 912     │
+│  🔄 Refresh   View: ▾ Youth   🔍 …      Showing 47 of 912│
 ├──────────────┬──────────────────────────────────────────┤
-│  Legend      │                                          │
-│  ● Active    │                 ● ●                      │
-│  ● Inactive  │              ●           ●               │
-│  ● Visitor   │              ● ●   ● ●                   │
-│  ● Needs…    │                                          │
+│  Youth       │                                          │
+│              │                 ◉   ◯                    │
+│  Focused     │              ◯           ◉★              │
+│  ● A — 24 m  │              ◉ ◯   ·   · ·               │
+│  (1 ★)       │                                          │
 │              │       Leaflet + OpenStreetMap            │
-│  Filters     │                                          │
-│  Small Group │                                          │
-│   ▾ All      │                                          │
-│  Status      │                                          │
-│   ▾ Active   │                                          │
+│  Sub-groups  │     (pins ringed = sub-group A;          │
+│  ● A  24     │      ★ and thicker ring = leader;        │
+│  ● B  19     │      dots = non-members, muted)          │
+│  ● C  12     │                                          │
 │              │                                          │
 │  Unmapped(3) │                                          │
 └──────────────┴──────────────────────────────────────────┘
@@ -82,6 +88,11 @@ For the longer version with every option spelled out, see
   Re-runs only when the address changes.
 - **Config:** a `Map Settings` tab auto-created on first run with best-guess
   defaults. Pin-color mappings live in a tiny lookup table below the config.
+- **Group columns:** optional extra columns whose cells contain CSV group
+  IDs (with `*` leader suffix). Each configured group column becomes a
+  selectable view that mutes non-members and reveals sub-groups by
+  clicking member pins. Colors for sub-groups are auto-assigned from the
+  same palette used elsewhere; assignment is stable across sessions.
 - **Privacy:** the script inherits your sheet's sharing. Only people with
   access to the sheet can see the map.
 - **Real-time model:** manual refresh (button in the map, or reopen). No

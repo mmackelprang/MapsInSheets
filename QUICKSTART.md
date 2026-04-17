@@ -7,16 +7,16 @@ One page. Install into a test Google Sheet and walk through UAT.
 1. Create a new Google Sheet.
 2. Rename the first tab to `Members` (or anything — this is your data tab).
 3. Put these headers in row 1: `Name`, `Address`, `Phone`, `Email`, `Status`,
-   `Small Group`.
+   `Small Group`, `Youth`.
 4. Add ~5 rows with real-looking data. Examples:
 
-   | Name | Address | Phone | Email | Status | Small Group |
-   |---|---|---|---|---|---|
-   | Smith Family | 1600 Pennsylvania Ave NW, Washington, DC | (555) 123-4567 | smith@example.com | Active | Tuesday |
-   | Jones Family | 350 5th Ave, New York, NY | (555) 234-5678 | jones@example.com | Inactive | Tuesday |
-   | Lee Family | 1 Infinite Loop, Cupertino, CA | (555) 345-6789 | lee@example.com | Visitor | Wednesday |
-   | Rivera Family | 500 S Buena Vista St, Burbank, CA | (555) 456-7890 | rivera@example.com | Active | Wednesday |
-   | Chen Family | 221B Baker St, London (invalid) | (555) 567-8901 | chen@example.com | Needs visit | Thursday |
+   | Name | Address | Phone | Email | Status | Small Group | Youth |
+   |---|---|---|---|---|---|---|
+   | Smith Family | 1600 Pennsylvania Ave NW, Washington, DC | (555) 123-4567 | smith@example.com | Active | Tuesday | A, B* |
+   | Jones Family | 350 5th Ave, New York, NY | (555) 234-5678 | jones@example.com | Inactive | Tuesday | A |
+   | Lee Family | 1 Infinite Loop, Cupertino, CA | (555) 345-6789 | lee@example.com | Visitor | Wednesday | B |
+   | Rivera Family | 500 S Buena Vista St, Burbank, CA | (555) 456-7890 | rivera@example.com | Active | Wednesday | A* |
+   | Chen Family | 221B Baker St, London (invalid) | (555) 567-8901 | chen@example.com | Needs visit | Thursday | *(blank)* |
 
    The last one intentionally won't geocode — it should land in the
    **Unmapped** list.
@@ -68,7 +68,9 @@ Click the **Save** icon once. Reload your spreadsheet browser tab.
 3. Fill in:
    - `Color column: Status`
    - `Popup columns: Name, Phone, Email, Status, Small Group`
+   - `Popup labels: Phone → ☎ Mobile, Email → ✉`
    - `Filter columns: Status, Small Group`
+   - `Group columns: Youth`
 4. Scroll down to the **Value | Color** table and add rows:
    ```
    Active       #2ecc71
@@ -117,6 +119,32 @@ Tick each as you verify. If something fails, note expected vs actual.
       one. Click Refresh. Only that row's `Geocoded From` changes — others
       keep their cached lat/lng.
 
+### Group views
+
+- [ ] The top bar shows a `View:` dropdown with `All` and `Youth`.
+- [ ] In `All` (default), pins are colored by `Status` and the sidebar
+      shows the legend + filter dropdowns.
+- [ ] Switch to `Youth`. The Chen Family pin (no Youth entry) fades to
+      ~35% opacity. All other pins keep their Status color. The sidebar
+      shows `Youth` and a list of sub-groups (A, B) with member counts.
+- [ ] Click the Smith Family pin (`Youth: A, B*`). Members of Youth A
+      get a ring in the A color; Smith has a `Name` label in their popup.
+      Smith is NOT a leader of A (first entry has no `*`).
+- [ ] Click Smith again. Focus cycles to Youth B. Smith now has a
+      **thicker ring, larger size, and a ★** (leader of B). Rivera
+      (Youth A*) dims because they are not in B.
+- [ ] Click Smith a third time. Cycle returns to Youth A.
+- [ ] Click the Rivera Family pin. Focus resets to Rivera's first group
+      (Youth A). Rivera shows the leader treatment (Rivera is `A*`).
+- [ ] Click a blank patch of ocean on the map. Highlight clears; rings
+      and star overlay disappear; focus leaves.
+- [ ] Click Smith's popup member-list link for Jones Family. Map
+      refocuses on Jones, same Youth A sub-group (since Jones has A),
+      popup stays open showing the same member list.
+- [ ] Info-window label for Phone reads `☎ Mobile` (from Popup labels).
+- [ ] If a row has no Email cell value, the Email row is omitted from
+      the popup entirely (no `Email: ` empty line).
+
 ### Privacy sanity
 - [ ] Open the sheet in an incognito window or as a different Google user
       that does NOT have sheet access. Confirm they can't open the map.
@@ -146,3 +174,5 @@ Open an issue (or just message me) with:
 | "Geocoder quota exceeded" | Hit ~1000 calls/day. Wait 24h. |
 | Map stuck on "Loading…" | Open script editor → **Executions** → see the error. |
 | Info window empty | `Popup columns` on Settings is blank — fill it in. |
+| `View:` dropdown only shows `All` | `Group columns` is blank or its names don't match data-tab headers exactly. Check the left panel for a "Warnings" section listing missing columns. |
+| Group ring doesn't appear on click | You clicked a pin that has no entry in the active group column. It's not a bug — non-members don't cycle. |

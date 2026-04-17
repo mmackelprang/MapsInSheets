@@ -49,6 +49,15 @@ Open it and fill in:
   info window. The first one is the title.
 - **Filter columns** — comma-separated header names exposed as dropdown
   filters in the map's left panel.
+- **Group columns** — optional, comma-separated header names (e.g.,
+  `Youth, Committee, Small Group`). Each listed column is treated as a
+  group column: its cells hold comma-separated group IDs with an optional
+  `*` suffix marking a row as a leader of that group
+  (e.g., `A, B, C*` = member of A and B, leader of C). Each configured
+  group column becomes an entry in the map's `View:` dropdown.
+- **Popup labels** — optional, comma-separated `Header → DisplayLabel`
+  pairs (e.g., `Phone → ☎ Mobile, Email → ✉`). Overrides the label shown
+  in the info window for that column. Both `→` and `->` are accepted.
 
 Below the key/value block, there is a `Value | Color` table. Use it to map
 specific values to specific colors:
@@ -64,6 +73,29 @@ palette. Cells that contain a literal color name (`red`) or hex (`#336699`)
 win over both.
 
 Click `Map → Open in dialog` again to see the configured map.
+
+## Using group views
+
+Once you've configured `Group columns`, the map's top bar gains a `View:`
+dropdown with entries for `All` plus each configured column.
+
+- In **All** mode (default): pins are colored by the `Color column` as
+  usual; the sidebar shows the legend + filter dropdowns + Unmapped list.
+- In a **group-column mode** (e.g., `Youth`): rows without any Youth
+  entry fade to ~35% opacity; members keep their `Color column` color. The
+  sidebar shows the column name and a list of sub-groups with member
+  counts (leader counts in parentheses with a ★).
+- **Clicking a member pin** highlights everyone in that pin's first
+  sub-group with a ring in the sub-group's color; leaders get a thicker
+  ring, larger size, and a ★ overlay. The info window shows the clicked
+  row's usual details plus a `Column: GroupID — N members, K leaders`
+  header and a compact list of the other members (leaders marked).
+- **Clicking the same pin again** cycles through that pin's sub-groups.
+- **Clicking a different pin** jumps the focus to that pin's first
+  sub-group.
+- **Clicking a blank map tile** clears the highlight.
+- **Clicking a name in the member list** jumps to that row, keeping the
+  same focused sub-group.
 
 ## (Optional) Enable "Open in new tab"
 
