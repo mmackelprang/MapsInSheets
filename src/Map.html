@@ -179,15 +179,57 @@
   function buildInfoHtml(p) {
     var title = p.popup && p.popup.length ? p.popup[0].value : '';
     var rest = (p.popup || []).slice(1);
+    var overrides = (state.data && state.data.popupLabels) || {};
+
     var parts = [];
     parts.push('<div class="info">');
     parts.push('<div class="title">' + escapeHtml(String(title || '')) + '</div>');
     parts.push('<div class="address">' + escapeHtml(p.address) + '</div>');
     rest.forEach(function (f) {
-      parts.push('<div class="field"><span class="label">' + escapeHtml(f.name) + ':</span> ' + renderValue(f.value) + '</div>');
+      var value = f.value;
+      if (value == null || String(value).trim() === '') return; // conditional hiding
+      var label = Object.prototype.hasOwnProperty.call(overrides, f.name) ? overrides[f.name] : f.name;
+      parts.push('<div class="field"><span class="label">' + escapeHtml(label) + ':</span> ' + renderValue(value) + '</div>');
     });
     var dirUrl = 'https://www.google.com/maps/dir/?api=1&destination=' + encodeURIComponent(p.address);
     parts.push('<a class="dir" href="' + dirUrl + '" target="_blank" rel="noopener">Get Directions</a>');
+
+    // Group-mode member list when a pin is focused and this popup is for the focused pin.
+    if (state.mode === 'group' && state.focusedPin === p) {
+      var col = state.activeColumn;
+      var entries = (p.groupMembership && p.groupMembership[col]) || [];
+      if (entries.length) {
+        var safeCycle = ((state.cycleIndex % entries.length) + entries.length) % entries.length;
+        var focusedId = entries[safeCycle].id;
+        var focusedKey = focusedId.toLowerCase();
+        var idx = state.data.groupIndex[col];
+        var g = idx && idx.groups[focusedKey];
+        if (g) {
+          parts.push('<hr style="margin:10px 0;border:none;border-top:1px solid #e0e0e0;">');
+          parts.push('<div style="font-size:13px;font-weight:600;margin-bottom:4px;">' +
+            escapeHtml(col) + ': ' + escapeHtml(focusedId) +
+            ' — ' + g.members.length + ' member' + (g.members.length === 1 ? '' : 's') +
+            (g.leaders.length ? ', ' + g.leaders.length + ' leader' + (g.leaders.length === 1 ? '' : 's') : '') +
+          '</div>');
+          var MAX = 20;
+          var show = g.members.slice(0, MAX);
+          var more = g.members.length - show.length;
+          show.forEach(function (m) {
+            var isLeader = g.leaders.some(function (L) { return L.rowNumber === m.rowNumber; });
+            parts.push('<div style="font-size:12px;padding:1px 0;">' +
+              (isLeader ? '★ ' : '') +
+              '<a href="#" data-row="' + m.rowNumber + '" class="member-link" style="color:#1a73e8;text-decoration:none;">' +
+                escapeHtml(m.popupTitle || ('Row ' + m.rowNumber)) +
+              '</a>' +
+            '</div>');
+          });
+          if (more > 0) {
+            parts.push('<div style="font-size:11px;color:#888;margin-top:2px;">…and ' + more + ' more.</div>');
+          }
+        }
+      }
+    }
+
     parts.push('</div>');
     return parts.join('');
   }
@@ -234,10 +276,17 @@
       var p = m._drivemap;
       if (!pinIsVisible(p)) continue;
       m.setIcon(makePinIcon(computePinVisual(p)));
+      // Rebuild the popup HTML so the member list and cycle hint stay in sync with state.
+      m.setPopupContent(buildInfoHtml(p));
       pinLayer.addLayer(m);
       visible++;
     }
     renderSidebar();
+    // If a pin is focused, ensure its popup is open to show the member list.
+    if (state.focusedPin) {
+      var fm = markers.find(function (mk) { return mk._drivemap === state.focusedPin; });
+      if (fm) fm.openPopup();
+    }
     setStatus('Showing ' + visible + ' of ' + state.data.totalRows);
     if (state.data.remainingToGeocode > 0) {
       setBanner('Geocoding was interrupted — ' + state.data.remainingToGeocode + ' rows remain. Click Refresh to continue.');
@@ -462,6 +511,32 @@
     render();
   }
 
+  // ---------- Jump to member ----------
+  function jumpToRow(rowNumber) {
+    var marker = markers.find(function (m) { return m._drivemap.rowNumber === rowNumber; });
+    if (!marker) return;
+    var p = marker._drivemap;
+    var col = state.activeColumn;
+    // Preserve current focused sub-group: find its position in the target's group list.
+    var currentFocusedId = null;
+    if (state.focusedPin) {
+      var fe = state.focusedPin.groupMembership[col] || [];
+      if (fe.length) {
+        var safe = ((state.cycleIndex % fe.length) + fe.length) % fe.length;
+        currentFocusedId = fe[safe].id.toLowerCase();
+      }
+    }
+    state.focusedPin = p;
+    var targetEntries = p.groupMembership[col] || [];
+    var targetIdx = -1;
+    if (currentFocusedId) {
+      targetIdx = targetEntries.findIndex(function (e) { return e.id.toLowerCase() === currentFocusedId; });
+    }
+    state.cycleIndex = targetIdx >= 0 ? targetIdx : 0;
+    marker.openPopup();
+    render();
+  }
+
   // ---------- Marker management ----------
   function rebuildMarkers(data) {
     markers = [];
@@ -472,6 +547,18 @@
       marker.bindPopup(buildInfoHtml(p), { maxWidth: 320 });
       marker.on('click', function (ev) {
         handlePinClick(p);
+      });
+      marker.on('popupopen', function (ev) {
+        var container = ev.popup.getElement();
+        if (!container) return;
+        var links = container.querySelectorAll('a.member-link');
+        links.forEach(function (link) {
+          link.addEventListener('click', function (evt) {
+            evt.preventDefault();
+            var rowNumber = parseInt(link.getAttribute('data-row'), 10);
+            jumpToRow(rowNumber);
+          });
+        });
       });
       markers.push(marker);
     });
