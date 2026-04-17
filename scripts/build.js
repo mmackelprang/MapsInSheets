@@ -34,7 +34,7 @@ function main() {
   fs.rmSync(DIST, { recursive: true, force: true });
   fs.mkdirSync(DIST, { recursive: true });
 
-  console.log('Building DriveMap dist/');
+  console.log('Building MapsInSheets dist/');
   writeOut('appsscript.json', fs.readFileSync(path.join(SRC, 'appsscript.json')));
   writeOut('Map.html', fs.readFileSync(path.join(SRC, 'Map.html')));
   buildOne(path.join(SRC, 'Code.js'), 'Code.gs');

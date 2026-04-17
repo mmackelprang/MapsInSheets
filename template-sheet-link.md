@@ -1,6 +1,6 @@
 # Template sheet
 
-A pre-built template sheet with DriveMap already bound can be used as the
+A pre-built template sheet with MapsInSheets already bound can be used as the
 "easy path" for non-technical users.
 
 **Status:** not yet published.
@@ -9,7 +9,7 @@ A pre-built template sheet with DriveMap already bound can be used as the
 
 1. Create a new Google Sheet with sample address/metadata rows and a
    reasonable `Status`/`Small Group` column.
-2. Install DriveMap into it following `SETUP.md`.
+2. Install MapsInSheets into it following `SETUP.md`.
 3. `File → Share → Publish to the web` is **not** needed — instead, share
    as read-only, and tell recipients to `File → Make a copy` into their
    own Drive.

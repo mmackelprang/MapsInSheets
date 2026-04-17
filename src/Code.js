@@ -1,5 +1,5 @@
 // ============================================================================
-// DriveMap — Apps Script glue
+// MapsInSheets — Apps Script glue
 // ============================================================================
 
 const SETTINGS_TAB_NAME = 'Map Settings';
@@ -21,10 +21,10 @@ function openDialog() {
   const html = HtmlService
     .createTemplateFromFile('Map')
     .evaluate()
-    .setTitle('DriveMap')
+    .setTitle('MapsInSheets')
     .setWidth(DEFAULT_DIALOG_WIDTH)
     .setHeight(DEFAULT_DIALOG_HEIGHT);
-  SpreadsheetApp.getUi().showModalDialog(html, 'DriveMap');
+  SpreadsheetApp.getUi().showModalDialog(html, 'MapsInSheets');
 }
 
 function openNewTab() {
@@ -49,7 +49,7 @@ function doGet() {
   return HtmlService
     .createTemplateFromFile('Map')
     .evaluate()
-    .setTitle('DriveMap')
+    .setTitle('MapsInSheets')
     .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
 }
 

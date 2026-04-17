@@ -1,6 +1,6 @@
-# DriveMap — Setup
+# MapsInSheets — Setup
 
-DriveMap turns a Google Sheet of addresses into an interactive map, visible
+MapsInSheets turns a Google Sheet of addresses into an interactive map, visible
 as a dialog inside the sheet and as a full-page view in a new browser tab.
 
 ## What you need
@@ -69,7 +69,7 @@ Click `Map → Open in dialog` again to see the configured map.
 
 1. In the Apps Script editor: `Deploy → New deployment`.
 2. Type: `Web app`.
-3. Description: `DriveMap web app`.
+3. Description: `MapsInSheets web app`.
 4. Execute as: **Me**.
 5. Who has access: **Anyone with Google account** (or the org-restricted
    equivalent).
