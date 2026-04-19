@@ -40,6 +40,7 @@
     <button id="refreshBtn">🔄 Refresh</button>
     <label style="font-size:13px;color:#666;">View:</label>
     <select id="viewSelect" style="padding:6px 8px;border:1px solid #ccc;border-radius:4px;"></select>
+    <button id="fitBtn" title="Zoom to selection">🎯 Fit</button>
     <input id="searchBox" type="search" placeholder="Search…">
     <span id="status">Loading…</span>
   </div>
@@ -550,6 +551,51 @@
     render();
   }
 
+  // ---------- Fit-to-selection ----------
+  function fitToSelection() {
+    if (!state.data) return;
+    var selected = [];
+    if (state.mode === 'all') {
+      // All visible pins (post-search / legend / column filters).
+      for (var i = 0; i < markers.length; i++) {
+        if (pinIsVisible(markers[i]._drivemap)) selected.push(markers[i]);
+      }
+    } else if (state.mode === 'group' && state.focusedPin) {
+      // All pins in the focused sub-group — ignore other filters.
+      var col = state.activeColumn;
+      var focusedEntries = state.focusedPin.groupMembership[col] || [];
+      if (!focusedEntries.length) return;
+      var n = focusedEntries.length;
+      var safeCycle = ((state.cycleIndex % n) + n) % n;
+      var focusedKey = focusedEntries[safeCycle].id.toLowerCase();
+      for (var j = 0; j < markers.length; j++) {
+        var p = markers[j]._drivemap;
+        var entries = (p.groupMembership && p.groupMembership[col]) || [];
+        var isMember = entries.some(function (e) { return e.id.toLowerCase() === focusedKey; });
+        if (isMember) selected.push(markers[j]);
+      }
+    } else {
+      // Group mode without focus: visible pins with >=1 membership in active column.
+      var col2 = state.activeColumn;
+      for (var k = 0; k < markers.length; k++) {
+        var p2 = markers[k]._drivemap;
+        if (!pinIsVisible(p2)) continue;
+        var entries2 = (p2.groupMembership && p2.groupMembership[col2]) || [];
+        if (entries2.length > 0) selected.push(markers[k]);
+      }
+    }
+
+    if (selected.length === 0) return; // silent no-op
+    if (selected.length === 1) {
+      var ll = selected[0].getLatLng();
+      map.setView([ll.lat, ll.lng], 16);
+      return;
+    }
+    var bounds = L.featureGroup(selected).getBounds();
+    if (!bounds.isValid()) return;
+    map.fitBounds(bounds.pad(0.1));
+  }
+
   // ---------- Jump to member ----------
   function jumpToRow(rowNumber) {
     var marker = markers.find(function (m) { return m._drivemap.rowNumber === rowNumber; });
@@ -623,6 +669,7 @@
 
   // ---------- Wire up ----------
   document.getElementById('refreshBtn').addEventListener('click', loadData);
+  document.getElementById('fitBtn').addEventListener('click', fitToSelection);
   document.getElementById('searchBox').addEventListener('input', function (ev) {
     state.searchTerm = ev.target.value.trim();
     render();
