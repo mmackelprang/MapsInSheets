@@ -225,6 +225,7 @@
     parts.push('<a class="dir" href="' + dirUrl + '" target="_blank" rel="noopener">Get Directions</a>');
 
     // Group-mode member list when a pin is focused and this popup is for the focused pin.
+    // Leaders sorted to top; full list wrapped in a scroll container (~6 rows visible).
     if (state.mode === 'group' && state.focusedPin === p) {
       var col = state.activeColumn;
       var entries = (p.groupMembership && p.groupMembership[col]) || [];
@@ -241,11 +242,21 @@
             ' — ' + g.members.length + ' member' + (g.members.length === 1 ? '' : 's') +
             (g.leaders.length ? ', ' + g.leaders.length + ' leader' + (g.leaders.length === 1 ? '' : 's') : '') +
           '</div>');
-          var MAX = 20;
-          var show = g.members.slice(0, MAX);
-          var more = g.members.length - show.length;
-          show.forEach(function (m) {
-            var isLeader = g.leaders.some(function (L) { return L.rowNumber === m.rowNumber; });
+
+          // Partition members into leaders + non-leaders, preserve source order within each.
+          var leaderRowNumbers = {};
+          g.leaders.forEach(function (L) { leaderRowNumbers[L.rowNumber] = true; });
+          var leaders = [];
+          var nonLeaders = [];
+          g.members.forEach(function (m) {
+            if (leaderRowNumbers[m.rowNumber]) leaders.push(m);
+            else nonLeaders.push(m);
+          });
+          var ordered = leaders.concat(nonLeaders);
+
+          parts.push('<div style="max-height:126px;overflow-y:auto;">');
+          ordered.forEach(function (m) {
+            var isLeader = !!leaderRowNumbers[m.rowNumber];
             parts.push('<div style="font-size:12px;padding:1px 0;">' +
               (isLeader ? '★ ' : '') +
               '<a href="#" data-row="' + m.rowNumber + '" class="member-link" style="color:#1a73e8;text-decoration:none;">' +
@@ -253,9 +264,7 @@
               '</a>' +
             '</div>');
           });
-          if (more > 0) {
-            parts.push('<div style="font-size:11px;color:#888;margin-top:2px;">…and ' + more + ' more.</div>');
-          }
+          parts.push('</div>');
         }
       }
     }
