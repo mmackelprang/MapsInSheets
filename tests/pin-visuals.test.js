@@ -35,8 +35,10 @@ describe('computeGroupPinVisual', () => {
     const v = computeGroupPinVisual(p, {
       activeColumn: COL, focusedPin: null, cycleIndex: 0, palette: PALETTE,
     });
-    expect(v.color).toBe(MUTED_COLOR);
-    expect(v.opacity).toBe(MUTED_OPACITY);
+    expect(v).toEqual({
+      color: MUTED_COLOR, opacity: MUTED_OPACITY,
+      scale: 1, star: false, heroOutline: false,
+    });
   });
 
   it('no focus: colors by first membership in cell order', () => {
@@ -117,6 +119,9 @@ describe('computeGroupPinVisual', () => {
     });
     expect(v.color).toBe(MUTED_COLOR);
     expect(v.opacity).toBe(MUTED_OPACITY);
+    expect(v.scale).toBe(1);
+    expect(v.star).toBe(false);
+    expect(v.heroOutline).toBe(false);
   });
 
   it('id matching is case-insensitive', () => {

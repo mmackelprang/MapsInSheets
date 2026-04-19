@@ -2,7 +2,9 @@
 // The `all` mode visual (pin.color, opacity 1) is trivial and stays inline in
 // Map.html.
 
-var MUTED_COLOR = '#9e9e9e';
+// For Node tests only — build step strips this require; in Apps Script the
+// needed symbols are provided by lib_colors.gs in script-scope.
+var MUTED_COLOR = NEUTRAL_GRAY;
 var MUTED_OPACITY = 0.15;
 var LEADER_SCALE = 1.5;
 
@@ -48,7 +50,7 @@ function computeGroupPinVisual(pin, context) {
     color: color,
     opacity: 1,
     scale: activeEntry.isLeader ? LEADER_SCALE : 1,
-    star: !!activeEntry.isLeader,
+    star: activeEntry.isLeader,
     heroOutline: isHero,
   };
 }
