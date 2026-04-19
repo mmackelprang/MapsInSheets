@@ -149,6 +149,34 @@ Tick each as you verify. If something fails, note expected vs actual.
 - [ ] If a row has no Email cell value, the Email row is omitted from
       the popup entirely (no `Email: ` empty line).
 
+### Group-view refinements (2026-04-19)
+
+- [ ] Switch to `Youth`. Pins that have at least one Youth entry recolor to
+      their **first** sub-group's color (in cell order — e.g. `B, A` →
+      colored by B). Pins with no Youth entry go dim gray (~15% opacity).
+- [ ] Click the Smith Family pin (`Youth: A, B*`). Smith gets a thin dark
+      outline (the "hero" marker). Every other pin that's a member of
+      Youth A also shows Youth A's color. Pins not in Youth A dim gray.
+- [ ] Click Smith again. The whole-map palette shifts to Youth B. Smith
+      now shows `★` and is larger (leader of B).
+- [ ] No pins show a colored ring anywhere — the old ring treatment is
+      gone. Color alone + star + size + hero outline carry the state.
+- [ ] Open a popup for a large sub-group (add ≥8 rows with the same sub-group
+      for testing if needed). The member list is scrollable within the
+      popup; ~6 rows are visible at a time; no "…and N more" line appears.
+- [ ] Leaders appear at the top of the member list (with `★`) in source
+      order; non-leaders follow in source order.
+- [ ] In All mode, pan/zoom the map far away from the pins. Click `🎯 Fit`.
+      The map refits around all visible pins.
+- [ ] In All mode, hide one legend color. Click Fit. The map fits only to
+      still-visible pins (hidden color is excluded).
+- [ ] In group mode, click a pin in a small sub-group, then click Fit. The
+      map tightens around that sub-group's members.
+- [ ] In group mode without focus, click Fit. The map fits pins with ≥1
+      membership only (dim-gray non-members are excluded).
+- [ ] Focus on a sub-group whose only member pin is one row. Click Fit.
+      The map centers on the pin at a reasonable zoom (not zoomed to street level).
+
 ### Privacy sanity
 - [ ] Open the sheet in an incognito window or as a different Google user
       that does NOT have sheet access. Confirm they can't open the map.
