@@ -5,7 +5,7 @@ API keys, external hosting, or third-party accounts.
 
 ![License: MIT](https://img.shields.io/badge/license-MIT-blue)
 ![Runtime: Google Apps Script](https://img.shields.io/badge/runtime-Apps%20Script%20V8-yellow)
-![Tests: 29 passing](https://img.shields.io/badge/tests-29%20passing-brightgreen)
+![Tests: 66 passing](https://img.shields.io/badge/tests-66%20passing-brightgreen)
 
 ## What it does
 
@@ -17,10 +17,12 @@ tab — that shows:
   Active / Inactive / Visitor).
 - **Group views.** Declare one or more columns as *group columns* whose
   cells hold comma-separated group IDs with an optional `*` suffix for
-  leaders. Switch the top `View:` dropdown to a group column to mute
-  non-members; click a pin to ring-highlight that pin's sub-group members
-  and badge leaders with a star. Same-pin clicks cycle through multiple
-  memberships.
+  leaders. Switch the top `View:` dropdown to a group column: pins recolor
+  to their sub-group's palette color, non-members go muted gray, and leaders
+  get a star plus a larger pin. Click a pin to focus its sub-group (hero
+  outline on the clicked pin). Same-pin clicks cycle through multiple
+  memberships, recoloring the whole map each time. A `🎯 Fit` button zooms
+  to the current selection.
 - **Info windows** with your chosen columns. Phone numbers become tap-to-call,
   emails become `mailto:` links, URLs become clickable, plus a one-click
   **Get Directions** button. Column labels can be customized (`Phone → ☎ Mobile`)
@@ -83,9 +85,9 @@ For the longer version with every option spelled out, see
 │  ● A — 24 m  │              ◉ ◯   ·   · ·               │
 │  (1 ★)       │                                          │
 │              │       Leaflet + OpenStreetMap            │
-│  Sub-groups  │     (pins ringed = sub-group A;          │
-│  ● A  24     │      ★ and thicker ring = leader;        │
-│  ● B  19     │      dots = non-members, muted)          │
+│  Sub-groups  │     (colored pins = sub-group A;         │
+│  ● A  24     │      ★ and larger pin = leader;          │
+│  ● B  19     │      dots = non-members, muted gray)     │
 │  ● C  12     │                                          │
 │              │                                          │
 │  Unmapped(3) │                                          │
@@ -143,7 +145,7 @@ MapsInSheets/
 
 ```bash
 npm install
-npm test            # 29 unit tests
+npm test            # 66 unit tests
 npm run build       # regenerate dist/
 ```
 

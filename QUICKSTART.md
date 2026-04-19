@@ -128,20 +128,23 @@ Tick each as you verify. If something fails, note expected vs actual.
 - [ ] The top bar shows a `View:` dropdown with `All` and `Youth`.
 - [ ] In `All` (default), pins are colored by `Status` and the sidebar
       shows the legend + filter dropdowns.
-- [ ] Switch to `Youth`. The Chen Family pin (no Youth entry) fades to
-      ~35% opacity. All other pins keep their Status color. The sidebar
-      shows `Youth` and a list of sub-groups (A, B) with member counts.
-- [ ] Click the Smith Family pin (`Youth: A, B*`). Members of Youth A
-      get a ring in the A color; Smith has a `Name` label in their popup.
-      Smith is NOT a leader of A (first entry has no `*`).
-- [ ] Click Smith again. Focus cycles to Youth B. Smith now has a
-      **thicker ring, larger size, and a ★** (leader of B). Rivera
-      (Youth A*) dims because they are not in B.
+- [ ] Switch to `Youth`. The Chen Family pin (no Youth entry) dims to
+      ~15% opacity and neutral gray. All other pins recolor to their
+      first Youth sub-group in cell order. The sidebar shows `Youth`
+      and a list of sub-groups (A, B) with member counts.
+- [ ] Click the Smith Family pin (`Youth: A, B*`). Smith gets a thin
+      dark hero outline. All other Youth A members take on Youth A's
+      color; non-members of Youth A dim to neutral gray. Smith is NOT
+      a leader of A (first entry has no `*`).
+- [ ] Click Smith again. Focus cycles to Youth B. Smith now shows a
+      `★` and is larger (leader of B). The whole-map palette shifts —
+      Youth B members take on Youth B's color; Rivera (Youth A*) dims
+      because they are not in B.
 - [ ] Click Smith a third time. Cycle returns to Youth A.
 - [ ] Click the Rivera Family pin. Focus resets to Rivera's first group
-      (Youth A). Rivera shows the leader treatment (Rivera is `A*`).
-- [ ] Click a blank patch of ocean on the map. Highlight clears; rings
-      and star overlay disappear; focus leaves.
+      (Youth A). Rivera shows the leader treatment (`★` and larger).
+- [ ] Click a blank patch of ocean on the map. Highlight clears; hero
+      outline and star overlay disappear; focus leaves.
 - [ ] Click Smith's popup member-list link for Jones Family. Map
       refocuses on Jones, same Youth A sub-group (since Jones has A),
       popup stays open showing the same member list.
@@ -207,4 +210,4 @@ Open an issue (or just message me) with:
 | Map stuck on "Loading…" | Open script editor → **Executions** → see the error. |
 | Info window empty | `Popup columns` on Settings is blank — fill it in. |
 | `View:` dropdown only shows `All` | `Group columns` is blank or its names don't match data-tab headers exactly. Check the left panel for a "Warnings" section listing missing columns. |
-| Group ring doesn't appear on click | You clicked a pin that has no entry in the active group column. It's not a bug — non-members don't cycle. |
+| Pin doesn't recolor / no hero outline on click | You clicked a pin that has no entry in the active group column. It's not a bug — non-members don't cycle. |
