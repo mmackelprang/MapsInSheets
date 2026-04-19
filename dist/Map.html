@@ -112,53 +112,83 @@
   }
 
   // ---------- Pin visual computation ----------
+  // Mirrors src/lib/pin-visuals.js (tests live under tests/pin-visuals.test.js).
+  // Keep the two in sync.
+  var MUTED_COLOR = '#9e9e9e';
+  var MUTED_OPACITY = 0.15;
+  var LEADER_SCALE = 1.5;
+
   function computePinVisual(pin) {
     if (state.mode === 'all') {
-      return { color: pin.color, opacity: 1, ringColor: null, ringWidth: 0, scale: 1, star: false };
+      return { color: pin.color, opacity: 1, scale: 1, star: false, heroOutline: false };
     }
-    var col = state.activeColumn;
-    var hasData = pin.groupMembership && pin.groupMembership[col] && pin.groupMembership[col].length > 0;
+    return computeGroupPinVisual(pin, {
+      activeColumn: state.activeColumn,
+      focusedPin: state.focusedPin,
+      cycleIndex: state.cycleIndex,
+      palette: (state.data.groupIndex &&
+                state.data.groupIndex[state.activeColumn] &&
+                state.data.groupIndex[state.activeColumn].palette) || {},
+    });
+  }
 
-    if (!state.focusedPin) {
-      return { color: pin.color, opacity: hasData ? 1 : 0.35, ringColor: null, ringWidth: 0, scale: 1, star: false };
+  function computeGroupPinVisual(pin, context) {
+    var col = context.activeColumn;
+    var memberships = (pin.groupMembership && pin.groupMembership[col]) || [];
+    if (memberships.length === 0) return mutedVisual();
+
+    var activeEntry = null;
+    var isHero = false;
+
+    if (context.focusedPin) {
+      var focusedEntries =
+        (context.focusedPin.groupMembership && context.focusedPin.groupMembership[col]) || [];
+      if (focusedEntries.length === 0) {
+        activeEntry = memberships[0];
+      } else {
+        var n = focusedEntries.length;
+        var safeCycle = ((context.cycleIndex % n) + n) % n;
+        var focusedId = focusedEntries[safeCycle].id.toLowerCase();
+        activeEntry = memberships.find(function (e) { return e.id.toLowerCase() === focusedId; });
+        if (!activeEntry) return mutedVisual();
+        isHero = (context.focusedPin === pin);
+      }
+    } else {
+      activeEntry = memberships[0];
     }
 
-    // With focus — compute the focused sub-group ID and check this pin.
-    var focusedEntries = state.focusedPin.groupMembership[col] || [];
-    if (!focusedEntries.length) {
-      // Shouldn't happen (focused pin must have data in col), but handle gracefully.
-      return { color: pin.color, opacity: hasData ? 1 : 0.35, ringColor: null, ringWidth: 0, scale: 1, star: false };
-    }
-    var safeCycle = ((state.cycleIndex % focusedEntries.length) + focusedEntries.length) % focusedEntries.length;
-    var focusedId = focusedEntries[safeCycle].id.toLowerCase();
+    var color = context.palette[activeEntry.id.toLowerCase()];
+    if (!color) return mutedVisual();
+    return {
+      color: color,
+      opacity: 1,
+      scale: activeEntry.isLeader ? LEADER_SCALE : 1,
+      star: activeEntry.isLeader,
+      heroOutline: isHero,
+    };
+  }
 
-    var entry = (pin.groupMembership[col] || []).find(function (e) { return e.id.toLowerCase() === focusedId; });
-    if (!entry) {
-      return { color: pin.color, opacity: hasData ? 0.35 : 0.2, ringColor: null, ringWidth: 0, scale: 1, star: false };
-    }
-
-    var paletteForCol = (state.data.groupIndex && state.data.groupIndex[col] && state.data.groupIndex[col].palette) || {};
-    var ringColor = paletteForCol[focusedId] || '#333';
-    if (entry.isLeader) {
-      return { color: pin.color, opacity: 1, ringColor: ringColor, ringWidth: 4, scale: 1.5, star: true };
-    }
-    return { color: pin.color, opacity: 1, ringColor: ringColor, ringWidth: 2, scale: 1, star: false };
+  function mutedVisual() {
+    return { color: MUTED_COLOR, opacity: MUTED_OPACITY, scale: 1, star: false, heroOutline: false };
   }
 
   function makePinIcon(visual) {
     var base = 18;
     var scaled = Math.round(base * visual.scale);
-    var extra = visual.ringWidth || 0;
+    var extra = visual.heroOutline ? 2 : 0;
     var total = scaled + 2 * extra;
+
+    var shadow = visual.heroOutline
+      ? 'box-shadow:0 0 0 2px #333, 0 1px 3px rgba(0,0,0,0.3)'
+      : null;
 
     var styles = [
       'width:' + scaled + 'px',
       'height:' + scaled + 'px',
       'background:' + visual.color,
     ];
-    if (visual.ringColor) {
-      styles.push('box-shadow:0 0 0 ' + visual.ringWidth + 'px ' + visual.ringColor + ', 0 1px 3px rgba(0,0,0,0.3)');
-    }
+    if (shadow) styles.push(shadow);
+
     var pinHtml = '<div class="pin-circle" style="' + styles.join(';') + ';"></div>';
     var starHtml = visual.star
       ? '<div style="position:absolute;top:-4px;right:-4px;font-size:14px;line-height:1;text-shadow:0 0 2px white;">★</div>'
