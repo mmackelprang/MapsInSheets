@@ -128,26 +128,57 @@ Tick each as you verify. If something fails, note expected vs actual.
 - [ ] The top bar shows a `View:` dropdown with `All` and `Youth`.
 - [ ] In `All` (default), pins are colored by `Status` and the sidebar
       shows the legend + filter dropdowns.
-- [ ] Switch to `Youth`. The Chen Family pin (no Youth entry) fades to
-      ~35% opacity. All other pins keep their Status color. The sidebar
-      shows `Youth` and a list of sub-groups (A, B) with member counts.
-- [ ] Click the Smith Family pin (`Youth: A, B*`). Members of Youth A
-      get a ring in the A color; Smith has a `Name` label in their popup.
-      Smith is NOT a leader of A (first entry has no `*`).
-- [ ] Click Smith again. Focus cycles to Youth B. Smith now has a
-      **thicker ring, larger size, and a ★** (leader of B). Rivera
-      (Youth A*) dims because they are not in B.
+- [ ] Switch to `Youth`. The Chen Family pin (no Youth entry) dims to
+      ~15% opacity and neutral gray. All other pins recolor to their
+      first Youth sub-group in cell order. The sidebar shows `Youth`
+      and a list of sub-groups (A, B) with member counts.
+- [ ] Click the Smith Family pin (`Youth: A, B*`). Smith gets a thin
+      dark hero outline. All other Youth A members take on Youth A's
+      color; non-members of Youth A dim to neutral gray. Smith is NOT
+      a leader of A (first entry has no `*`).
+- [ ] Click Smith again. Focus cycles to Youth B. Smith now shows a
+      `★` and is larger (leader of B). The whole-map palette shifts —
+      Youth B members take on Youth B's color; Rivera (Youth A*) dims
+      because they are not in B.
 - [ ] Click Smith a third time. Cycle returns to Youth A.
 - [ ] Click the Rivera Family pin. Focus resets to Rivera's first group
-      (Youth A). Rivera shows the leader treatment (Rivera is `A*`).
-- [ ] Click a blank patch of ocean on the map. Highlight clears; rings
-      and star overlay disappear; focus leaves.
+      (Youth A). Rivera shows the leader treatment (`★` and larger).
+- [ ] Click a blank patch of ocean on the map. Highlight clears; hero
+      outline and star overlay disappear; focus leaves.
 - [ ] Click Smith's popup member-list link for Jones Family. Map
       refocuses on Jones, same Youth A sub-group (since Jones has A),
       popup stays open showing the same member list.
 - [ ] Info-window label for Phone reads `☎ Mobile` (from Popup labels).
 - [ ] If a row has no Email cell value, the Email row is omitted from
       the popup entirely (no `Email: ` empty line).
+
+### Group-view refinements (2026-04-19)
+
+- [ ] Switch to `Youth`. Pins that have at least one Youth entry recolor to
+      their **first** sub-group's color (in cell order — e.g. `B, A` →
+      colored by B). Pins with no Youth entry go dim gray (~15% opacity).
+- [ ] Click the Smith Family pin (`Youth: A, B*`). Smith gets a thin dark
+      outline (the "hero" marker). Every other pin that's a member of
+      Youth A also shows Youth A's color. Pins not in Youth A dim gray.
+- [ ] Click Smith again. The whole-map palette shifts to Youth B. Smith
+      now shows `★` and is larger (leader of B).
+- [ ] No pins show a colored ring anywhere — the old ring treatment is
+      gone. Color alone + star + size + hero outline carry the state.
+- [ ] Open a popup for a large sub-group (add ≥8 rows with the same sub-group
+      for testing if needed). The member list is scrollable within the
+      popup; ~6 rows are visible at a time; no "…and N more" line appears.
+- [ ] Leaders appear at the top of the member list (with `★`) in source
+      order; non-leaders follow in source order.
+- [ ] In All mode, pan/zoom the map far away from the pins. Click `🎯 Fit`.
+      The map refits around all visible pins.
+- [ ] In All mode, hide one legend color. Click Fit. The map fits only to
+      still-visible pins (hidden color is excluded).
+- [ ] In group mode, click a pin in a small sub-group, then click Fit. The
+      map tightens around that sub-group's members.
+- [ ] In group mode without focus, click Fit. The map fits pins with ≥1
+      membership only (dim-gray non-members are excluded).
+- [ ] Focus on a sub-group whose only member pin is one row. Click Fit.
+      The map centers on the pin at a reasonable zoom (not zoomed to street level).
 
 ### Privacy sanity
 - [ ] Open the sheet in an incognito window or as a different Google user
@@ -179,4 +210,4 @@ Open an issue (or just message me) with:
 | Map stuck on "Loading…" | Open script editor → **Executions** → see the error. |
 | Info window empty | `Popup columns` on Settings is blank — fill it in. |
 | `View:` dropdown only shows `All` | `Group columns` is blank or its names don't match data-tab headers exactly. Check the left panel for a "Warnings" section listing missing columns. |
-| Group ring doesn't appear on click | You clicked a pin that has no entry in the active group column. It's not a bug — non-members don't cycle. |
+| Pin doesn't recolor / no hero outline on click | You clicked a pin that has no entry in the active group column. It's not a bug — non-members don't cycle. |
