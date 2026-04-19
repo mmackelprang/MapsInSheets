@@ -9,6 +9,7 @@ links at the bottom.
 - [What you're looking at](#what-youre-looking-at)
 - [Switching views and exploring groups](#switching-views-and-exploring-groups)
 - [Best practices for sheet owners](#best-practices-for-sheet-owners)
+- [Using the map on a phone](#using-the-map-on-a-phone)
 - [Where to go next](#where-to-go-next)
 
 ## What you're looking at
@@ -110,6 +111,48 @@ in on a zero-area bounding box.
   every recipient's copy would hit your URL. Leave it blank and
   let each copy deploy its own. See the
   [Maintainer Guide](MAINTAINER.md) for the full story.
+
+## Using the map on a phone
+
+The `Map` custom menu you see in Google Sheets on a desktop browser
+isn't executed by the Google Sheets or Drive mobile apps — this is a
+Google platform limitation, not a MapsInSheets bug. Custom Apps Script
+menus are desktop-only. To use the map on a phone, the sheet owner
+deploys the script as a web app, then shares the resulting `/exec` URL.
+
+**What the sheet owner does (once):**
+
+- Deploy the script as a web app following [`QUICKSTART.md §6`](../QUICKSTART.md#optional-web-app-deployment).
+- Copy the `/exec` URL from the deployment dialog.
+- Paste it into the `Web app URL` row of `Map Settings`.
+- Share the `/exec` URL with anyone who'll use the map on a phone.
+
+**What the phone user does:**
+
+- Open the shared `/exec` URL in Safari (iOS) or Chrome (Android).
+- Sign in with the same Google account that has access to the sheet.
+- **iOS:** tap the Share button, then "Add to Home Screen."
+- **Android:** tap the 3-dot menu, then "Install app" (Chrome PWA
+  prompt) or "Add to Home screen."
+- The new icon launches a standalone view of the map — no browser
+  chrome, looks and feels like an app.
+
+**What works / what's different on mobile:**
+
+- Pinch-to-zoom, pan, and tap-a-pin all work as expected.
+- `Get Directions` opens the phone's default maps app (Google Maps on
+  Android; Apple Maps or Google Maps on iOS) with turn-by-turn nav.
+- The sidebar stacks below the map on narrow screens; on tablets it
+  appears beside the map.
+- No geocoding runs on the phone — the `/exec` URL serves pre-geocoded
+  data. Tapping `🔄 Refresh` re-fetches the latest, but new addresses
+  need a desktop session (or an Apps Script run) to be geocoded.
+
+**Privacy reminder.** The `/exec` URL runs under whoever deployed it.
+If a template maintainer pre-fills `Web app URL` in a shared master,
+every recipient's copy would hit the maintainer's URL and see the
+maintainer's data. Leave `Web app URL` blank on templates — see
+[`MAINTAINER.md`](MAINTAINER.md).
 
 ## Where to go next
 
