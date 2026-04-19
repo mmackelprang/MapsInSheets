@@ -71,7 +71,8 @@ migrate your data, or follow the manual install steps below.
    Script editor and click `Map → Open in dialog`.
 
 For the longer version with every option spelled out, see
-[SETUP.md](SETUP.md).
+[SETUP.md](SETUP.md). For end-users and best-practice tips, see
+[`docs/USAGE.md`](docs/USAGE.md).
 
 ## UI at a glance
 
