@@ -190,6 +190,17 @@ Tick each as you verify. If something fails, note expected vs actual.
 - [ ] Copy the `/exec` URL. Paste into `Web app URL` row of `Map Settings`.
 - [ ] Click **Map → Open in new tab**. The map opens full-screen in a new tab.
 
+### Mobile usage
+
+- [ ] After deploying the web app and pasting the `/exec` URL in
+      `Map Settings → Web app URL`, open the same URL on a phone.
+      Map loads; pins are placed correctly.
+- [ ] **iOS:** Share → "Add to Home Screen." **Android:** 3-dot menu →
+      "Install app" or "Add to Home screen." The new icon launches a
+      standalone map view (no browser chrome).
+- [ ] Tap a pin on the phone. Popup renders. `Get Directions` opens the
+      phone's default maps app with the destination prefilled.
+
 ## 6 · If anything failed
 
 Open an issue (or just message me) with:
