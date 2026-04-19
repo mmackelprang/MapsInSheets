@@ -48,7 +48,20 @@ rosters, sales territories, field-work logs — where:
 - You want to share with a few people who have the sheet open.
 - Setup has to be "copy a script, click a menu" — not a cloud-console tour.
 
-## Quick start
+## Quick install (recommended — non-technical users)
+
+A pre-built template sheet is available for one-click copying. See
+[`template-sheet-link.md`](template-sheet-link.md) for the URL. Click
+the URL → Google prompts you to make a copy → name the copy → done.
+
+The copy is fully self-contained — its own Google Sheet, its own bound
+Apps Script, your own data. No paste required.
+
+**Caveat:** your copy is a frozen snapshot of the script at copy time.
+To pick up later upstream changes, either make a fresh copy and
+migrate your data, or follow the manual install steps below.
+
+## Manual install (technical users, or for updates to an existing copy)
 
 1. **Clone or download this repo.**
 2. **Follow [QUICKSTART.md](QUICKSTART.md)** — a single-page install + UAT
