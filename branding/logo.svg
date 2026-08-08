@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 980 256">
+  <g transform="translate(0,40) scale(0.6875)">
+    <rect width="256" height="256" rx="56" fill="#1E9E62"/>
+
+<path d="M128 224 C128 224 60 150 60 104 C60 66 90 40 128 40 C166 40 196 66 196 104
+         C196 150 128 224 128 224 Z" fill="#FFFFFF"/>
+<g stroke="#1E9E62" stroke-width="8" fill="none">
+  <rect x="98" y="74" width="60" height="60" rx="8"/>
+  <line x1="98" y1="104" x2="158" y2="104"/>
+  <line x1="128" y1="74" x2="128" y2="134"/>
+</g>
+
+  </g>
+  <text x="224" y="140" font-family="Montserrat, 'Segoe UI', 'DejaVu Sans', system-ui, sans-serif" font-size="84" font-weight="700" fill="#1B1F26">MapsInSheets</text>
+  <text x="224" y="192" font-family="Montserrat, 'Segoe UI', 'DejaVu Sans', system-ui, sans-serif" font-size="32" font-weight="500" fill="#5A6472">Your sheet, on the map.</text>
+</svg>
